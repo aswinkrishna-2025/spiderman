@@ -15,7 +15,7 @@ export default function Home(){return <>
       <div className="mb-5 inline-flex rounded-full border border-red/30 bg-red/10 px-4 py-2 text-xs font-bold uppercase tracking-[.22em] text-red">College quiz competition</div>
       <h1 className="font-display text-6xl leading-[.9] sm:text-8xl lg:text-[7.2rem]">SPIDER-MAN:<br/><span className="text-red">BRAND NEW DAY</span></h1>
       <p className="mt-5 text-xl font-semibold sm:text-2xl">Swing into the ultimate quiz. Win 2 free movie tickets.</p>
-      <p className="mt-3 max-w-2xl text-zinc-300"><strong className="text-white">Presented by MuV Team</strong><br/>College of Engineering Pathanapuram</p>
+      <p className="mt-3 max-w-2xl text-zinc-300"><strong className="text-white">Presented by MuV PEC</strong><br/>College of Engineering Pathanapuram</p>
       <div className="mt-7 flex flex-wrap gap-3"><Link href="/register" className="btn-primary">Register your team <ArrowRight size={18}/></Link><Link href="/rules" className="btn-secondary">View the rules</Link></div><Countdown/>
     </motion.div></div>
   </section>
