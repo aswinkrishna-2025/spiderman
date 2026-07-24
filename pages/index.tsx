@@ -4,7 +4,7 @@ import {useEffect,useState} from 'react';
 import {motion} from 'framer-motion';
 import {ArrowRight,CalendarDays,Trophy,Users,ChevronDown} from 'lucide-react';
 
-const target=process.env.NEXT_PUBLIC_EVENT_DATE||'2026-07-24T14:00:00+05:30';
+const target=process.env.NEXT_PUBLIC_EVENT_DATE||'2026-07-30T14:00:00+05:30';
 function Countdown(){const [d,setD]=useState([0,0,0,0]);useEffect(()=>{const tick=()=>{const n=Math.max(0,new Date(target).getTime()-Date.now());setD([Math.floor(n/864e5),Math.floor(n/36e5)%24,Math.floor(n/6e4)%60,Math.floor(n/1e3)%60])};tick();const i=setInterval(tick,1000);return()=>clearInterval(i)},[]);return <div className="mt-8 flex gap-3">{d.map((v,i)=><div key={i} className="glass min-w-16 rounded-xl px-3 py-3 text-center"><div className="font-display text-2xl">{String(v).padStart(2,'0')}</div><div className="text-[9px] uppercase tracking-widest text-zinc-500">{['Days','Hours','Mins','Secs'][i]}</div></div>)}</div>}
 
 export default function Home(){return <>
@@ -15,7 +15,7 @@ export default function Home(){return <>
       <div className="comic-tag mb-7">College quiz competition</div>
       <h1 className="font-display text-6xl leading-[.84] sm:text-8xl lg:text-[7.5rem]">SPIDER-MAN:<br/><span className="text-red drop-shadow-[4px_4px_0_#071b36]">BRAND NEW DAY</span></h1>
       <p className="mt-5 text-xl font-semibold sm:text-2xl">Swing into the ultimate quiz. Win 2 free movie tickets.</p>
-      <p className="mt-3 max-w-2xl text-zinc-300"><strong className="text-white">Presented by MuV PEC</strong><br/>College of Engineering Pathanapuram · 24 July 2026 · 2:00 PM</p>
+      <p className="mt-3 max-w-2xl text-zinc-300"><strong className="text-white">Presented by MuV PEC</strong><br/>College of Engineering Pathanapuram · 30 July 2026 · 2:00 PM</p>
       <div className="mt-7 flex flex-wrap gap-3"><Link href="/register" className="btn-primary">Register your team <ArrowRight size={18}/></Link><Link href="/rules" className="btn-secondary">View the rules</Link></div><Countdown/>
     </motion.div></div>
   </section>
