@@ -41,14 +41,14 @@ export default function Register(){
     localStorage.setItem('brandNewDayRegistration',JSON.stringify({...f,...soloBlanks,m1Phone,teamSize,registrationFee:fee,pricingVersion:4}));
     r.push('/payment');
   }
-  return <><PageHero eyebrow="Secure your spot" title="REGISTRATION" copy="Register solo or as a two-person team. Solo entry is ₹20."/><section className="px-5 py-16"><form onSubmit={submit} className="mx-auto max-w-5xl">
+  return <><PageHero eyebrow="Secure your spot" title="REGISTRATION" copy="Register solo or as a two-person team. Solo entry is free with 10,000+ MuLearn karma."/><section className="px-5 py-16"><form onSubmit={submit} className="mx-auto max-w-5xl">
     <div className="glass rounded-3xl p-6 sm:p-9"><h2 className="font-display text-3xl">ENTRY DETAILS</h2><div className="mt-6 grid gap-5 sm:grid-cols-3">
       <label><span className="label">Entry type</span><select className="input" required name="teamSize" value={f.teamSize} onChange={change}><option value="1">Solo - 1 participant</option><option value="2">Team - 2 participants</option></select></label>
       <Field label={teamSize===1?'Participant display name':'Team name'} name="teamName" value={f.teamName} onChange={change}/>
       <Field label="College" name="college" value={f.college} onChange={change}/>
     </div></div>
     <Member n={1} f={f} change={change}/>{teamSize===2&&<Member n={2} f={f} change={change}/>}
-    <div className="glass mt-5 flex flex-col justify-between gap-5 rounded-3xl border-red/30 p-6 sm:flex-row sm:items-center"><div className="flex gap-4"><Sparkles className="text-red"/><div><b>{teamSize===1?'Solo entry':'MuLearn karma offer'}</b><p className="mt-1 text-sm text-zinc-400">{teamSize===1?'One participant: ₹20':'Both at 10,000+: free · One at 10,000+: ₹20 · Otherwise: ₹40'}</p></div></div><div className="text-right"><small className="uppercase tracking-widest text-zinc-500">Your fee</small><div className="font-display text-5xl text-red">{fee===0?'FREE':`₹${fee}`}</div></div></div>
+    <div className="glass mt-5 flex flex-col justify-between gap-5 rounded-3xl border-red/30 p-6 sm:flex-row sm:items-center"><div className="flex gap-4"><Sparkles className="text-red"/><div><b>{teamSize===1?'Solo karma offer':'MuLearn karma offer'}</b><p className="mt-1 text-sm text-zinc-400">{teamSize===1?'10,000+ karma: free · Otherwise: ₹20':'Both at 10,000+: free · One at 10,000+: ₹20 · Otherwise: ₹40'}</p></div></div><div className="text-right"><small className="uppercase tracking-widest text-zinc-500">Your fee</small><div className="font-display text-5xl text-red">{fee===0?'FREE':`₹${fee}`}</div></div></div>
     <div className="mt-7 flex flex-col items-start justify-between gap-5 sm:flex-row sm:items-center"><label className="flex gap-3 text-sm"><input className="accent-red" type="checkbox" name="agreed" checked={f.agreed} onChange={change}/><span>I confirm the details are accurate and agree to all rules.</span></label><button className="btn-primary">Continue <ArrowRight size={18}/></button></div>{error&&<p className="mt-4 text-sm text-red">{error}</p>}
   </form></section></>
 }
