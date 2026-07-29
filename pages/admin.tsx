@@ -1,6 +1,137 @@
-import {useEffect,useMemo,useState} from 'react';import Head from 'next/head';import {CheckCircle2,Download,LogIn,RefreshCw,Search,ShieldCheck,Users} from 'lucide-react';
-type Row={row:number;timestamp:string;teamName:string;teamSize:string;college:string;m1Name:string;m1Phone:string;m1Email:string;m1Department:string;m1Year:string;m2Name:string;m2Phone:string;m2Email:string;m2Department:string;m2Year:string;transactionId:string;screenshotUrl:string;paymentStatus:string;entryStatus:string;remarks:string};
-export default function Admin(){const [password,setPassword]=useState('');const [rows,setRows]=useState<Row[]>([]);const [query,setQuery]=useState('');const [loading,setLoading]=useState(false);const [error,setError]=useState('');const [ready,setReady]=useState(false);const call=async(body:any)=>{const pass=password||sessionStorage.getItem('adminPassword')||'';const res=await fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json','x-admin-password':pass},body:JSON.stringify(body)});const data=await res.json();if(!res.ok)throw new Error(data.error||'Request failed');return data};const load=async()=>{setLoading(true);setError('');try{const d=await call({action:'list'});setRows(d.rows||[]);setReady(true)}catch(e:any){setError(e.message);setReady(false)}finally{setLoading(false)}};useEffect(()=>{const p=sessionStorage.getItem('adminPassword');if(p){setPassword(p)}},[]);const login=async(e:any)=>{e.preventDefault();sessionStorage.setItem('adminPassword',password);await load()};const update=async(row:number,field:'paymentStatus'|'entryStatus'|'remarks',value:string)=>{setRows(v=>v.map(x=>x.row===row?{...x,[field]:value}:x));try{await call({action:'update',row,field,value})}catch(e:any){setError(e.message);load()}};const filtered=useMemo(()=>rows.filter(r=>`${r.teamName} ${r.college} ${r.m1Name} ${r.m2Name} ${r.m1Phone} ${r.m2Phone}`.toLowerCase().includes(query.toLowerCase())),[rows,query]);const exportCsv=()=>{const headers=['Timestamp','Team Name','Team Size','College','Member 1 Name','Member 1 Phone','Member 1 Email','Member 1 Department','Member 1 Year','Member 2 Name','Member 2 Phone','Member 2 Email','Member 2 Department','Member 2 Year','Transaction ID','Payment Screenshot URL','Payment Status','Entry Status','Remarks'];const vals=rows.map(r=>[r.timestamp,r.teamName,r.teamSize||2,r.college,r.m1Name,r.m1Phone,r.m1Email,r.m1Department,r.m1Year,r.m2Name,r.m2Phone,r.m2Email,r.m2Department,r.m2Year,r.transactionId,r.screenshotUrl,r.paymentStatus,r.entryStatus,r.remarks]);const csv=[headers,...vals].map(a=>a.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=`brand-new-day-registrations-${new Date().toISOString().slice(0,10)}.csv`;a.click();URL.revokeObjectURL(a.href)};
-if(!ready)return <><Head><title>Admin | Brand New Day Quiz</title></Head><section className="grid min-h-screen place-items-center px-5 pt-16"><form onSubmit={login} className="glass w-full max-w-md rounded-3xl p-8"><ShieldCheck className="text-red" size={42}/><h1 className="mt-5 font-display text-4xl">ORGANIZER ACCESS</h1><p className="mt-2 text-sm text-zinc-400">MuV PEC registration desk</p><label className="mt-7 block"><span className="label">Admin password</span><input className="input" type="password" value={password} onChange={e=>setPassword(e.target.value)} required autoFocus/></label>{error&&<p className="mt-4 text-sm text-red">{error}</p>}<button className="btn-primary mt-6 w-full" disabled={loading}>{loading?<RefreshCw className="animate-spin"/>:<LogIn size={18}/>} Sign in</button></form></section></>;
-return <><Head><title>Registration Admin | Brand New Day Quiz</title></Head><section className="min-h-screen px-5 pb-20 pt-28"><div className="mx-auto max-w-[1500px]"><div className="flex flex-col justify-between gap-5 md:flex-row md:items-end"><div><p className="text-xs font-bold uppercase tracking-[.3em] text-red">MuV PEC · Event control</p><h1 className="mt-2 font-display text-5xl">REGISTRATION DESK</h1><p className="mt-2 text-zinc-400">Verify payments, track venue entry, and export participant data.</p></div><div className="flex flex-wrap gap-3"><button onClick={load} className="btn-secondary"><RefreshCw size={17} className={loading?'animate-spin':''}/> Refresh</button><button onClick={exportCsv} className="btn-primary"><Download size={17}/> Export CSV</button></div></div><div className="mt-8 grid gap-4 sm:grid-cols-3"><Stat icon={Users} label="Registered teams" value={rows.length}/><Stat icon={CheckCircle2} label="Payments approved" value={rows.filter(r=>r.paymentStatus==='Approved').length}/><Stat icon={LogIn} label="Teams checked in" value={rows.filter(r=>r.entryStatus==='Checked In').length}/></div><div className="mt-6 flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4"><Search size={18} className="text-zinc-500"/><input className="w-full bg-transparent py-4 text-sm outline-none" placeholder="Search team, college, participant or phone…" value={query} onChange={e=>setQuery(e.target.value)}/></div>{error&&<p className="mt-4 text-sm text-red">{error}</p>}<div className="mt-5 overflow-x-auto rounded-2xl border border-white/10"><table className="w-full min-w-[1250px] text-left text-sm"><thead className="bg-white/5 text-xs uppercase tracking-wider text-zinc-500"><tr>{['Team','Members','Contact','Transaction','Proof','Payment','Entry','Remarks'].map(h=><th key={h} className="p-4">{h}</th>)}</tr></thead><tbody>{filtered.map(r=><tr key={r.row} className="border-t border-white/10 align-top hover:bg-white/[.025]"><td className="p-4"><div className="font-semibold">{r.teamName}</div><div className="mt-1 text-xs font-semibold text-red">{Number(r.teamSize)===1?'Solo':'2 members'}</div><div className="mt-1 text-xs text-zinc-500">{r.college}</div></td><td className="p-4"><div>{r.m1Name}</div><div className="mt-1 text-zinc-400">{r.m2Name}</div></td><td className="p-4 text-xs"><div>{r.m1Phone}</div><div className="mt-1">{r.m2Phone}</div></td><td className="p-4 text-xs">{r.transactionId||'—'}</td><td className="p-4">{r.screenshotUrl?<a href={r.screenshotUrl} target="_blank" rel="noreferrer" className="font-semibold text-red hover:underline">View proof</a>:'—'}</td><td className="p-4"><select className="input !w-32 !p-2 text-xs" value={r.paymentStatus||'Pending'} onChange={e=>update(r.row,'paymentStatus',e.target.value)}><option>Pending</option><option>Approved</option><option>Rejected</option></select></td><td className="p-4"><select className="input !w-36 !p-2 text-xs" value={r.entryStatus||'Not Entered'} onChange={e=>update(r.row,'entryStatus',e.target.value)}><option>Not Entered</option><option>Checked In</option></select></td><td className="p-4"><input className="input !w-52 !p-2 text-xs" defaultValue={r.remarks} onBlur={e=>update(r.row,'remarks',e.target.value)} placeholder="Add note"/></td></tr>)}</tbody></table>{!filtered.length&&!loading&&<div className="p-12 text-center text-zinc-500">No registrations found.</div>}</div></div></section></>}
+import {useEffect,useMemo,useState} from 'react';
+import Head from 'next/head';
+import {CheckCircle2,Download,FileDown,LogIn,RefreshCw,Search,ShieldCheck,Trash2,Users} from 'lucide-react';
+
+type Row={
+  row:number;timestamp:string;teamName:string;teamSize:string;college:string;
+  m1Name:string;m1Phone:string;m1Email:string;m1Department:string;m1Year:string;
+  m2Name:string;m2Phone:string;m2Email:string;m2Department:string;m2Year:string;
+  transactionId:string;screenshotUrl:string;paymentStatus:string;entryStatus:string;remarks:string
+};
+
+const pdfText=(value:unknown)=>String(value??'')
+  .normalize('NFKD').replace(/[^\x20-\x7E]/g,'')
+  .replace(/\\/g,'\\\\').replace(/\(/g,'\\(').replace(/\)/g,'\\)');
+
+function createParticipantsPdf(rows:Row[]){
+  const objects:string[]=[];
+  const add=(body:string)=>{objects.push(body);return objects.length};
+  const catalogId=add('');
+  const pagesId=add('');
+  const fontRegularId=add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>');
+  const fontBoldId=add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>');
+  const pageIds:number[]=[];
+  const reportRows=rows.length?rows:[{
+    row:0,timestamp:'',teamName:'No registrations',teamSize:'',college:'',
+    m1Name:'',m1Phone:'',m1Email:'',m1Department:'',m1Year:'',
+    m2Name:'',m2Phone:'',m2Email:'',m2Department:'',m2Year:'',
+    transactionId:'',screenshotUrl:'',paymentStatus:'',entryStatus:'',remarks:''
+  }];
+
+  reportRows.forEach((r,index)=>{
+    const lines=[
+      ['Team name',r.teamName],
+      ['Team size',Number(r.teamSize)===1?'Solo participant':'2 members'],
+      ['College',r.college],
+      ['Registered at',r.timestamp],
+      ['Member 1',r.m1Name],
+      ['Phone',r.m1Phone],
+      ['Email',r.m1Email],
+      ['Department / Year',[r.m1Department,r.m1Year].filter(Boolean).join(' / ')],
+      ...(Number(r.teamSize)===1?[]:[
+        ['Member 2',r.m2Name],
+        ['Phone',r.m2Phone],
+        ['Email',r.m2Email],
+        ['Department / Year',[r.m2Department,r.m2Year].filter(Boolean).join(' / ')]
+      ]),
+      ['Transaction ID',r.transactionId||'Not provided'],
+      ['Payment status',r.paymentStatus||'Pending'],
+      ['Entry status',r.entryStatus||'Not Entered'],
+      ['Remarks',r.remarks||'None']
+    ];
+    const content=[
+      '0.92 0.08 0.12 rg 40 776 515 3 re f',
+      '0 g',
+      `BT /F2 19 Tf 40 744 Td (${pdfText('BRAND NEW DAY - PARTICIPANT REGISTRATION')}) Tj ET`,
+      `BT /F1 9 Tf 40 724 Td (${pdfText(`MuV PEC | Registration ${index+1} of ${reportRows.length}`)}) Tj ET`,
+      '0.85 G 40 710 m 555 710 l S',
+      ...lines.flatMap(([label,value],i)=>{
+        const y=684-(i*36);
+        const safe=pdfText(value).slice(0,78);
+        return [
+          `BT /F2 9 Tf 40 ${y} Td (${pdfText(label).toUpperCase()}) Tj ET`,
+          `BT /F1 11 Tf 175 ${y} Td (${safe||'-'}) Tj ET`
+        ];
+      }),
+      '0.85 G 40 72 m 555 72 l S',
+      `BT /F1 8 Tf 40 54 Td (${pdfText(`Generated ${new Date().toLocaleString('en-IN')} | For organizer use`)}) Tj ET`,
+      `BT /F1 8 Tf 500 54 Td (${index+1} / ${reportRows.length}) Tj ET`
+    ].join('\n');
+    const contentId=add(`<< /Length ${content.length} >>\nstream\n${content}\nendstream`);
+    const pageId=add(`<< /Type /Page /Parent ${pagesId} 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 ${fontRegularId} 0 R /F2 ${fontBoldId} 0 R >> >> /Contents ${contentId} 0 R >>`);
+    pageIds.push(pageId);
+  });
+
+  objects[catalogId-1]=`<< /Type /Catalog /Pages ${pagesId} 0 R >>`;
+  objects[pagesId-1]=`<< /Type /Pages /Kids [${pageIds.map(id=>`${id} 0 R`).join(' ')}] /Count ${pageIds.length} >>`;
+  let pdf='%PDF-1.4\n%\xE2\xE3\xCF\xD3\n';
+  const offsets=[0];
+  objects.forEach((body,i)=>{offsets.push(pdf.length);pdf+=`${i+1} 0 obj\n${body}\nendobj\n`});
+  const xref=pdf.length;
+  pdf+=`xref\n0 ${objects.length+1}\n0000000000 65535 f \n`;
+  offsets.slice(1).forEach(offset=>{pdf+=`${String(offset).padStart(10,'0')} 00000 n \n`});
+  pdf+=`trailer\n<< /Size ${objects.length+1} /Root ${catalogId} 0 R >>\nstartxref\n${xref}\n%%EOF`;
+  return new Blob([new Uint8Array(pdf.split('').map(char=>char.charCodeAt(0)&255))],{type:'application/pdf'});
+}
+
+export default function Admin(){
+  const [password,setPassword]=useState('');
+  const [rows,setRows]=useState<Row[]>([]);
+  const [query,setQuery]=useState('');
+  const [loading,setLoading]=useState(false);
+  const [error,setError]=useState('');
+  const [ready,setReady]=useState(false);
+  const call=async(body:any)=>{
+    const pass=password||sessionStorage.getItem('adminPassword')||'';
+    const res=await fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json','x-admin-password':pass},body:JSON.stringify(body)});
+    const data=await res.json();
+    if(!res.ok)throw new Error(data.error||'Request failed');
+    return data
+  };
+  const load=async()=>{
+    setLoading(true);setError('');
+    try{const d=await call({action:'list'});setRows(d.rows||[]);setReady(true)}
+    catch(e:any){setError(e.message);setReady(false)}
+    finally{setLoading(false)}
+  };
+  useEffect(()=>{const p=sessionStorage.getItem('adminPassword');if(p)setPassword(p)},[]);
+  const login=async(e:any)=>{e.preventDefault();sessionStorage.setItem('adminPassword',password);await load()};
+  const update=async(row:number,field:'paymentStatus'|'entryStatus'|'remarks',value:string)=>{
+    setRows(v=>v.map(x=>x.row===row?{...x,[field]:value}:x));
+    try{await call({action:'update',row,field,value})}catch(e:any){setError(e.message);load()}
+  };
+  const deleteTeam=async(team:Row)=>{
+    if(!window.confirm(`Delete "${team.teamName}" and all of its participant details? This cannot be undone.`))return;
+    setLoading(true);setError('');
+    try{await call({action:'delete',row:team.row});await load()}
+    catch(e:any){setError(e.message)}
+    finally{setLoading(false)}
+  };
+  const filtered=useMemo(()=>rows.filter(r=>`${r.teamName} ${r.college} ${r.m1Name} ${r.m2Name} ${r.m1Phone} ${r.m2Phone}`.toLowerCase().includes(query.toLowerCase())),[rows,query]);
+  const download=(blob:Blob,name:string)=>{
+    const url=URL.createObjectURL(blob);const a=document.createElement('a');
+    a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url)
+  };
+  const exportCsv=()=>{
+    const headers=['Timestamp','Team Name','Team Size','College','Member 1 Name','Member 1 Phone','Member 1 Email','Member 1 Department','Member 1 Year','Member 2 Name','Member 2 Phone','Member 2 Email','Member 2 Department','Member 2 Year','Transaction ID','Payment Screenshot URL','Payment Status','Entry Status','Remarks'];
+    const vals=rows.map(r=>[r.timestamp,r.teamName,r.teamSize||2,r.college,r.m1Name,r.m1Phone,r.m1Email,r.m1Department,r.m1Year,r.m2Name,r.m2Phone,r.m2Email,r.m2Department,r.m2Year,r.transactionId,r.screenshotUrl,r.paymentStatus,r.entryStatus,r.remarks]);
+    const csv=[headers,...vals].map(a=>a.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\n');
+    download(new Blob([csv],{type:'text/csv'}),`brand-new-day-registrations-${new Date().toISOString().slice(0,10)}.csv`)
+  };
+  const exportPdf=()=>download(createParticipantsPdf(rows),`brand-new-day-participants-${new Date().toISOString().slice(0,10)}.pdf`);
+
+  if(!ready)return <><Head><title>Admin | Brand New Day Quiz</title></Head><section className="grid min-h-screen place-items-center px-5 pt-16"><form onSubmit={login} className="glass w-full max-w-md rounded-3xl p-8"><ShieldCheck className="text-red" size={42}/><h1 className="mt-5 font-display text-4xl">ORGANIZER ACCESS</h1><p className="mt-2 text-sm text-zinc-400">MuV PEC registration desk</p><label className="mt-7 block"><span className="label">Admin password</span><input className="input" type="password" value={password} onChange={e=>setPassword(e.target.value)} required autoFocus/></label>{error&&<p className="mt-4 text-sm text-red">{error}</p>}<button className="btn-primary mt-6 w-full" disabled={loading}>{loading?<RefreshCw className="animate-spin"/>:<LogIn size={18}/>} Sign in</button></form></section></>;
+  return <><Head><title>Registration Admin | Brand New Day Quiz</title></Head><section className="min-h-screen px-5 pb-20 pt-28"><div className="mx-auto max-w-[1500px]"><div className="flex flex-col justify-between gap-5 md:flex-row md:items-end"><div><p className="text-xs font-bold uppercase tracking-[.3em] text-red">MuV PEC · Event control</p><h1 className="mt-2 font-display text-5xl">REGISTRATION DESK</h1><p className="mt-2 text-zinc-400">Verify payments, track venue entry, and export participant data.</p></div><div className="flex flex-wrap gap-3"><button onClick={load} className="btn-secondary"><RefreshCw size={17} className={loading?'animate-spin':''}/> Refresh</button><button onClick={exportCsv} className="btn-secondary"><Download size={17}/> Export CSV</button><button onClick={exportPdf} className="btn-primary"><FileDown size={17}/> Download PDF</button></div></div><div className="mt-8 grid gap-4 sm:grid-cols-3"><Stat icon={Users} label="Registered teams" value={rows.length}/><Stat icon={CheckCircle2} label="Payments approved" value={rows.filter(r=>r.paymentStatus==='Approved').length}/><Stat icon={LogIn} label="Teams checked in" value={rows.filter(r=>r.entryStatus==='Checked In').length}/></div><div className="mt-6 flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4"><Search size={18} className="text-zinc-500"/><input className="w-full bg-transparent py-4 text-sm outline-none" placeholder="Search team, college, participant or phone…" value={query} onChange={e=>setQuery(e.target.value)}/></div>{error&&<p className="mt-4 text-sm text-red">{error}</p>}<div className="mt-5 overflow-x-auto rounded-2xl border border-white/10"><table className="w-full min-w-[1320px] text-left text-sm"><thead className="bg-white/5 text-xs uppercase tracking-wider text-zinc-500"><tr>{['Team','Members','Contact','Transaction','Proof','Payment','Entry','Remarks','Delete'].map(h=><th key={h} className="p-4">{h}</th>)}</tr></thead><tbody>{filtered.map(r=><tr key={r.row} className="border-t border-white/10 align-top hover:bg-white/[.025]"><td className="p-4"><div className="font-semibold">{r.teamName}</div><div className="mt-1 text-xs font-semibold text-red">{Number(r.teamSize)===1?'Solo':'2 members'}</div><div className="mt-1 text-xs text-zinc-500">{r.college}</div></td><td className="p-4"><div>{r.m1Name}</div><div className="mt-1 text-zinc-400">{r.m2Name}</div></td><td className="p-4 text-xs"><div>{r.m1Phone}</div><div className="mt-1">{r.m2Phone}</div></td><td className="p-4 text-xs">{r.transactionId||'—'}</td><td className="p-4">{r.screenshotUrl?<a href={r.screenshotUrl} target="_blank" rel="noreferrer" className="font-semibold text-red hover:underline">View proof</a>:'—'}</td><td className="p-4"><select className="input !w-32 !p-2 text-xs" value={r.paymentStatus||'Pending'} onChange={e=>update(r.row,'paymentStatus',e.target.value)}><option>Pending</option><option>Approved</option><option>Rejected</option></select></td><td className="p-4"><select className="input !w-36 !p-2 text-xs" value={r.entryStatus||'Not Entered'} onChange={e=>update(r.row,'entryStatus',e.target.value)}><option>Not Entered</option><option>Checked In</option></select></td><td className="p-4"><input className="input !w-52 !p-2 text-xs" defaultValue={r.remarks} onBlur={e=>update(r.row,'remarks',e.target.value)} placeholder="Add note"/></td><td className="p-4"><button onClick={()=>deleteTeam(r)} disabled={loading} className="inline-flex items-center gap-2 rounded-lg border border-red/40 px-3 py-2 text-xs font-bold text-red transition hover:bg-red hover:text-white disabled:opacity-50" title={`Delete ${r.teamName}`}><Trash2 size={15}/> Delete</button></td></tr>)}</tbody></table>{!filtered.length&&!loading&&<div className="p-12 text-center text-zinc-500">No registrations found.</div>}</div></div></section></>
+}
+
 function Stat({icon:Icon,label,value}:{icon:any,label:string,value:number}){return <div className="glass rounded-2xl p-5"><Icon className="text-red" size={20}/><div className="mt-4 font-display text-4xl">{value}</div><div className="text-xs text-zinc-500">{label}</div></div>}
