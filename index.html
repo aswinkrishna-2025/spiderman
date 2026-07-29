@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Live Quiz Scoreboard</title>
+  <meta name="description" content="A simple one-page live quiz scoreboard.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Barlow+Condensed:wght@600;700;800&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main>
+    <header>
+      <div><p class="kicker">Live quiz · Scoring desk</p><h1>SCOREBOARD</h1><p class="muted">Each correct answer earns 1 point.</p></div>
+      <div class="actions"><button id="reset">Reset scores</button></div>
+    </header>
+    <form id="add-team" class="add-team">
+      <label for="team-name">Add a team</label>
+      <div><input id="team-name" type="text" maxlength="60" placeholder="Enter team name" autocomplete="off" required><button type="submit">＋ Add team</button></div>
+      <p id="form-error" role="alert"></p>
+    </form>
+    <section class="summary"><span>👥 <b id="team-count">0</b> teams</span><span>🏆 <b id="top-score">0</b> top score</span><span class="autosave">Scores save automatically on this device</span></section>
+    <section id="team-list" class="list" aria-label="Team scores"></section>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
