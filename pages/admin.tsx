@@ -109,7 +109,7 @@ export default function Admin(){
   const deleteTeam=async(team:Row)=>{
     if(!window.confirm(`Delete "${team.teamName}" and all of its participant details? This cannot be undone.`))return;
     setLoading(true);setError('');
-    try{await call({action:'delete',row:team.row});await load()}
+    try{const result=await call({action:'delete',row:team.row});if(!result.deleted)throw new Error('Deletion service is outdated. Redeploy the latest Google Apps Script version.');await load()}
     catch(e:any){setError(e.message)}
     finally{setLoading(false)}
   };
