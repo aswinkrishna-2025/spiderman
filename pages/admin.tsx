@@ -20,60 +20,56 @@ function createParticipantsPdf(rows:Row[]){
   const pagesId=add('');
   const fontRegularId=add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>');
   const fontBoldId=add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>');
-  const pageIds:number[]=[];
-  const reportRows=rows.length?rows:[{
-    row:0,timestamp:'',teamName:'No registrations',teamSize:'',college:'',
-    m1Name:'',m1Phone:'',m1Email:'',m1Department:'',m1Year:'',
-    m2Name:'',m2Phone:'',m2Email:'',m2Department:'',m2Year:'',
-    transactionId:'',screenshotUrl:'',paymentStatus:'',entryStatus:'',remarks:''
-  }];
-
-  reportRows.forEach((r,index)=>{
-    const lines=[
-      ['Team name',r.teamName],
-      ['Team size',Number(r.teamSize)===1?'Solo participant':'2 members'],
-      ['College',r.college],
-      ['Registered at',r.timestamp],
-      ['Member 1',r.m1Name],
-      ['Phone',r.m1Phone],
-      ['Email',r.m1Email],
-      ['Department / Year',[r.m1Department,r.m1Year].filter(Boolean).join(' / ')],
-      ...(Number(r.teamSize)===1?[]:[
-        ['Member 2',r.m2Name],
-        ['Phone',r.m2Phone],
-        ['Email',r.m2Email],
-        ['Department / Year',[r.m2Department,r.m2Year].filter(Boolean).join(' / ')]
-      ]),
-      ['Transaction ID',r.transactionId||'Not provided'],
-      ['Payment status',r.paymentStatus||'Pending'],
-      ['Entry status',r.entryStatus||'Not Entered'],
-      ['Remarks',r.remarks||'None']
-    ];
-    const content=[
-      '0.92 0.08 0.12 rg 40 776 515 3 re f',
-      '0 g',
-      `BT /F2 19 Tf 40 744 Td (${pdfText('BRAND NEW DAY - PARTICIPANT REGISTRATION')}) Tj ET`,
-      `BT /F1 9 Tf 40 724 Td (${pdfText(`MuV PEC | Registration ${index+1} of ${reportRows.length}`)}) Tj ET`,
-      '0.85 G 40 710 m 555 710 l S',
-      ...lines.flatMap(([label,value],i)=>{
-        const y=684-(i*36);
-        const safe=pdfText(value).slice(0,78);
-        return [
-          `BT /F2 9 Tf 40 ${y} Td (${pdfText(label).toUpperCase()}) Tj ET`,
-          `BT /F1 11 Tf 175 ${y} Td (${safe||'-'}) Tj ET`
-        ];
-      }),
-      '0.85 G 40 72 m 555 72 l S',
-      `BT /F1 8 Tf 40 54 Td (${pdfText(`Generated ${new Date().toLocaleString('en-IN')} | For organizer use`)}) Tj ET`,
-      `BT /F1 8 Tf 500 54 Td (${index+1} / ${reportRows.length}) Tj ET`
-    ].join('\n');
-    const contentId=add(`<< /Length ${content.length} >>\nstream\n${content}\nendstream`);
-    const pageId=add(`<< /Type /Page /Parent ${pagesId} 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 ${fontRegularId} 0 R /F2 ${fontBoldId} 0 R >> >> /Contents ${contentId} 0 R >>`);
-    pageIds.push(pageId);
-  });
+  const reportRows=rows.length?rows:[];
+  const tableTop=492;
+  const tableBottom=58;
+  const rowHeight=Math.min(24,Math.max(7,(tableTop-tableBottom)/Math.max(reportRows.length+1,1)));
+  const fontSize=Math.min(8,Math.max(4,rowHeight*0.34));
+  const columns=[
+    {label:'TEAM',x:30,w:116},
+    {label:'MEMBER 1',x:146,w:112},
+    {label:'PHONE 1',x:258,w:82},
+    {label:'DEPT / YEAR 1',x:340,w:104},
+    {label:'MEMBER 2',x:444,w:112},
+    {label:'PHONE 2',x:556,w:82},
+    {label:'DEPT / YEAR 2',x:638,w:174}
+  ];
+  const fit=(value:unknown,width:number)=>{
+    const max=Math.max(4,Math.floor(width/(fontSize*0.53)));
+    const text=pdfText(value);
+    return text.length>max?`${text.slice(0,max-2)}..`:text||'-'
+  };
+  const content=[
+    '0.92 0.08 0.12 rg 30 552 782 3 re f',
+    '0 g',
+    `BT /F2 18 Tf 30 526 Td (${pdfText('BRAND NEW DAY - PARTICIPANTS LIST')}) Tj ET`,
+    `BT /F1 8 Tf 30 508 Td (${pdfText(`MuV PEC | ${reportRows.length} registered team${reportRows.length===1?'':'s'} | Generated ${new Date().toLocaleString('en-IN')}`)}) Tj ET`,
+    '0.12 0.16 0.23 rg 30 472 782 20 re f',
+    ...columns.map(c=>`1 g BT /F2 7 Tf ${c.x+4} 479 Td (${c.label}) Tj ET`),
+    ...reportRows.flatMap((r,index)=>{
+      const y=472-((index+1)*rowHeight);
+      const fill=index%2===0?'0.96 0.96 0.96':'1 1 1';
+      const values=[
+        r.teamName,r.m1Name,r.m1Phone,
+        [r.m1Department,r.m1Year].filter(Boolean).join(' / '),
+        Number(r.teamSize)===1?'-':r.m2Name,
+        Number(r.teamSize)===1?'-':r.m2Phone,
+        Number(r.teamSize)===1?'-':[r.m2Department,r.m2Year].filter(Boolean).join(' / ')
+      ];
+      return [
+        `${fill} rg 30 ${y} 782 ${rowHeight} re f`,
+        ...columns.map((c,i)=>`0 g BT /F1 ${fontSize.toFixed(1)} Tf ${c.x+4} ${(y+(rowHeight-fontSize)/2).toFixed(1)} Td (${fit(values[i],c.w-8)}) Tj ET`),
+        `0.82 G 30 ${y} m 812 ${y} l S`
+      ]
+    }),
+    ...(reportRows.length?[]:[`0.35 g BT /F1 11 Tf 340 280 Td (${pdfText('No registrations found.')}) Tj ET`]),
+    `0.35 g BT /F1 7 Tf 30 35 Td (${pdfText('Organizer copy - participant summary')}) Tj ET`
+  ].join('\n');
+  const contentId=add(`<< /Length ${content.length} >>\nstream\n${content}\nendstream`);
+  const pageId=add(`<< /Type /Page /Parent ${pagesId} 0 R /MediaBox [0 0 842 595] /Resources << /Font << /F1 ${fontRegularId} 0 R /F2 ${fontBoldId} 0 R >> >> /Contents ${contentId} 0 R >>`);
 
   objects[catalogId-1]=`<< /Type /Catalog /Pages ${pagesId} 0 R >>`;
-  objects[pagesId-1]=`<< /Type /Pages /Kids [${pageIds.map(id=>`${id} 0 R`).join(' ')}] /Count ${pageIds.length} >>`;
+  objects[pagesId-1]=`<< /Type /Pages /Kids [${pageId} 0 R] /Count 1 >>`;
   let pdf='%PDF-1.4\n%\xE2\xE3\xCF\xD3\n';
   const offsets=[0];
   objects.forEach((body,i)=>{offsets.push(pdf.length);pdf+=`${i+1} 0 obj\n${body}\nendobj\n`});
